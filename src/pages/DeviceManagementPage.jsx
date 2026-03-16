@@ -155,14 +155,15 @@ export default function DeviceManagementPage() {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [showModal, setShowModal] = useState(false);
   const [sortBy, setSortBy] = useState({ col: 'name', dir: 'asc' });
+  const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    const socket = io('http://localhost:3001');
+    const s = io('http://localhost:3001');
+    setSocket(s);
     
-    socket.on('connect', () => {
-      socket.emit('get_initial_state', (state) => {
+    s.on('connect', () => {
+      s.emit('get_initial_state', (state) => {
         if (state.devices) {
-          // Convert map to array for the table
           const arr = Object.keys(state.devices).map(id => ({
             id, ...state.devices[id]
           }));
@@ -171,14 +172,14 @@ export default function DeviceManagementPage() {
       });
     });
 
-    socket.on('device_status_update', (devMap) => {
+    s.on('device_status_update', (devMap) => {
       const arr = Object.keys(devMap).map(id => ({
         id, ...devMap[id]
       }));
       setDevices(arr);
     });
 
-    return () => socket.disconnect();
+    return () => s.disconnect();
   }, []);
 
   const filtered = useMemo(() => {
@@ -211,17 +212,19 @@ export default function DeviceManagementPage() {
   };
 
   const handleDelete = () => {
-    setDevices(prev => prev.filter(d => !selectedIds.has(d.id)));
-    setSelectedIds(new Set());
+    if (socket) {
+      selectedIds.forEach(id => {
+        socket.emit('delete_device', id);
+      });
+      setSelectedIds(new Set());
+    }
   };
 
   const handleAdd = ({ name, type, auth }) => {
-    const newDevice = {
-      id: Date.now(), name, type, status: 'Offline',
-      lastSeen: 0, fw: FW_VERSIONS[rand(0, FW_VERSIONS.length - 1)],
-      signal: 0, auth
-    };
-    setDevices(prev => [newDevice, ...prev]);
+    if (socket) {
+      const id = 'dev_' + Math.random().toString(36).substr(2, 9);
+      socket.emit('add_device', { id, name, type, fw: '1.0.0', auth });
+    }
   };
 
   const sort = (col) => setSortBy(prev => ({

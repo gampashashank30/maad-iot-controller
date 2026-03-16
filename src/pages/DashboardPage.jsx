@@ -36,76 +36,64 @@ function GaugeWidget({ value }) {
     const endAngle = Math.PI * 2.2;
     const pct = Math.min(value / 100, 1);
 
+    // Outer glow ring
+    ctx.beginPath();
+    ctx.arc(cx, cy, r + 4, startAngle, endAngle);
+    ctx.strokeStyle = 'rgba(0,229,255,0.03)';
+    ctx.lineWidth = 26;
+    ctx.stroke();
+
     // Background arc
     ctx.beginPath();
     ctx.arc(cx, cy, r, startAngle, endAngle);
-    ctx.strokeStyle = 'rgba(0,229,255,0.12)';
-    ctx.lineWidth = 18;
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = 14;
     ctx.lineCap = 'round';
     ctx.stroke();
 
     // Value arc
     const valEnd = startAngle + (endAngle - startAngle) * pct;
     let color;
-    if (value < 30) color = '#00e5ff';
-    else if (value < 60) color = '#39ff14';
-    else if (value < 80) color = '#ff8c00';
-    else color = '#ff2d55';
+    if (value < 30) color = 'var(--clr-cyan)';
+    else if (value < 60) color = 'var(--clr-green)';
+    else if (value < 80) color = 'var(--clr-orange)';
+    else color = 'var(--clr-red)';
 
     const grad = ctx.createLinearGradient(cx - r, cy, cx + r, cy);
-    grad.addColorStop(0, '#00e5ff');
-    grad.addColorStop(0.5, color);
+    grad.addColorStop(0, 'var(--clr-cyan)');
     grad.addColorStop(1, color);
 
     ctx.beginPath();
     ctx.arc(cx, cy, r, startAngle, valEnd);
     ctx.strokeStyle = grad;
-    ctx.lineWidth = 18;
+    ctx.lineWidth = 14;
     ctx.lineCap = 'round';
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = color;
     ctx.stroke();
-
-    // Center glow
-    const radGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 20);
-    radGrad.addColorStop(0, 'rgba(0,229,255,0.3)');
-    radGrad.addColorStop(1, 'transparent');
-    ctx.fillStyle = radGrad;
-    ctx.fillRect(cx - 20, cy - 20, 40, 40);
-
-    // Tick marks
-    for (let i = 0; i <= 10; i++) {
-      const angle = startAngle + (endAngle - startAngle) * (i / 10);
-      const inner = r - 26;
-      const outer = r - 14;
-      ctx.beginPath();
-      ctx.moveTo(cx + Math.cos(angle) * inner, cy + Math.sin(angle) * inner);
-      ctx.lineTo(cx + Math.cos(angle) * outer, cy + Math.sin(angle) * outer);
-      ctx.strokeStyle = 'rgba(0,229,255,0.25)';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-    }
+    ctx.shadowBlur = 0;
 
     // Value text
-    ctx.fillStyle = color;
-    ctx.font = 'bold 2rem Orbitron, monospace';
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 2.2rem Orbitron, monospace';
     ctx.textAlign = 'center';
-    ctx.shadowColor = color;
-    ctx.shadowBlur = 10;
-    ctx.fillText(value + '°C', cx, cy + 10);
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = 'rgba(148,163,184,0.7)';
-    ctx.font = '0.65rem DM Sans, sans-serif';
-    ctx.fillText('TEMPERATURE', cx, cy + 32);
+    ctx.fillText(Math.round(value), cx, cy - 5);
+    
+    ctx.fillStyle = 'var(--text-secondary)';
+    ctx.font = '700 0.7rem DM Sans, sans-serif';
+    ctx.fillText('°CELSIUS', cx, cy + 22);
   }, [value]);
 
   return (
-    <div className="card card-glow" style={{ gridArea: 'gauge', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+    <div className="card card-glow" style={{ gridArea: 'gauge', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, zIndex: 2 }}>
         <Thermometer size={16} color="var(--clr-cyan)" />
-        <span style={{ fontFamily: 'var(--font-heading)', fontSize: '0.75rem', letterSpacing: '0.08em' }}>TEMPERATURE</span>
+        <span style={{ fontFamily: 'var(--font-heading)', fontSize: '0.75rem', letterSpacing: '0.08em', fontWeight: 600 }}>CORE TEMP</span>
       </div>
-      <canvas ref={canvasRef} width={200} height={160} style={{ width: '100%', height: 'auto' }} />
-      <div style={{ textAlign: 'center', marginTop: 4, fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
-        Range: 0–100°C
+      <canvas ref={canvasRef} width={220} height={180} style={{ width: '100%', height: 'auto', marginTop: -10 }} />
+      <div style={{ position: 'absolute', bottom: 16, width: '100%', left: 0, padding: '0 24px', display: 'flex', justifyContent: 'space-between', fontSize: '0.6rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+        <span>0°C</span>
+        <span>100°C</span>
       </div>
     </div>
   );
@@ -114,38 +102,45 @@ function GaugeWidget({ value }) {
 /* ---- Liquid Fill Widget ---- */
 function LiquidFillWidget({ value }) {
   return (
-    <div className="card card-glow" style={{ gridArea: 'liquid', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, alignSelf: 'flex-start' }}>
+    <div className="card card-glow" style={{ gridArea: 'liquid', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
         <Droplets size={16} color="var(--clr-cyan)" />
-        <span style={{ fontFamily: 'var(--font-heading)', fontSize: '0.75rem', letterSpacing: '0.08em' }}>HUMIDITY</span>
+        <span style={{ fontFamily: 'var(--font-heading)', fontSize: '0.75rem', letterSpacing: '0.08em', fontWeight: 600 }}>HUMIDITY</span>
       </div>
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20 }}>
-        {/* Tube */}
-        <div style={{ position: 'relative', width: 40, height: 140, borderRadius: '4px 4px 20px 20px', border: '2px solid var(--border-medium)', overflow: 'hidden', background: 'var(--bg-secondary)' }}>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 24 }}>
+        {/* Tube - Premium Glass look */}
+        <div style={{ 
+          position: 'relative', width: 44, height: 130, 
+          borderRadius: '22px', 
+          background: 'rgba(255,255,255,0.02)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          boxShadow: 'inset 0 4px 12px rgba(0,0,0,0.4)',
+          overflow: 'hidden'
+        }}>
+          {/* Liquid */}
           <div style={{
             position: 'absolute', bottom: 0, left: 0, right: 0,
             height: `${value}%`,
-            background: 'linear-gradient(to top, var(--clr-cyan), rgba(0,229,255,0.4))',
-            transition: 'height 1s ease',
-            boxShadow: '0 0 15px rgba(0,229,255,0.5)'
-          }} />
-          {/* Bubbles */}
-          {[25, 50, 75].map(pos => (
-            <div key={pos} style={{
-              position: 'absolute', bottom: `${pos}%`, left: '30%',
-              width: 6, height: 6, borderRadius: '50%',
-              background: 'rgba(255,255,255,0.4)',
-              animation: `float ${1.5 + pos / 50}s ease-in-out infinite`,
-              opacity: value > pos ? 1 : 0
+            background: 'linear-gradient(to top, #0070f3, #00e5ff)',
+            transition: 'height 1.5s cubic-bezier(0.34, 1.56, 0.64, 1)',
+            boxShadow: '0 0 20px rgba(0,229,255,0.4)'
+          }}>
+            {/* Wave effect overlay */}
+            <div style={{
+              position: 'absolute', top: -10, left: '-50%', width: '200%', height: 20,
+              background: 'rgba(255,255,255,0.1)',
+              borderRadius: '40%',
+              animation: 'spin 3s linear infinite'
             }} />
-          ))}
+          </div>
         </div>
         {/* Value */}
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontFamily: 'var(--font-heading)', fontSize: '2.2rem', fontWeight: 800, color: 'var(--clr-cyan)', textShadow: 'var(--glow-cyan)' }}>{value}%</div>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: 4 }}>
-            {value < 40 ? 'DRY' : value < 60 ? 'OPTIMAL' : 'HUMID'}
+        <div style={{ textAlign: 'left' }}>
+          <div style={{ fontFamily: 'var(--font-heading)', fontSize: '2.4rem', fontWeight: 900, color: '#fff', lineHeight: 1 }}>{value}%</div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--clr-cyan)', marginTop: 6, fontWeight: 600, letterSpacing: '0.05em' }}>
+            {value < 40 ? 'DRY' : value < 70 ? 'COMFORT' : 'CRITICAL'}
           </div>
+          <div style={{ marginTop: 8, padding: '4px 8px', borderRadius: 4, background: 'rgba(57,255,20,0.1)', color: 'var(--clr-green)', fontSize: '0.62rem', display: 'inline-block', fontWeight: 700 }}>STABLE</div>
         </div>
       </div>
     </div>
@@ -160,11 +155,14 @@ function LineChartWidget({ data, labels }) {
       label: 'Sensor',
       data,
       borderColor: '#00e5ff',
-      backgroundColor: 'rgba(0,229,255,0.06)',
-      borderWidth: 2,
+      backgroundColor: 'rgba(0,229,255,0.08)',
+      borderWidth: 3,
       pointRadius: 0,
-      pointHoverRadius: 4,
-      tension: 0.4,
+      pointHoverRadius: 6,
+      pointHoverBackgroundColor: '#fff',
+      pointHoverBorderColor: '#00e5ff',
+      pointHoverBorderWidth: 2,
+      tension: 0.45,
       fill: true,
     }]
   };
@@ -172,32 +170,48 @@ function LineChartWidget({ data, labels }) {
   const options = {
     responsive: true,
     maintainAspectRatio: false,
-    animation: { duration: 600 },
-    plugins: { legend: { display: false }, tooltip: {
-      backgroundColor: 'rgba(13,19,38,0.95)',
-      borderColor: 'rgba(0,229,255,0.3)',
-      borderWidth: 1,
-      titleColor: '#00e5ff',
-      bodyColor: '#94a3b8',
-      titleFont: { family: 'Orbitron', size: 11 },
-    }},
+    animation: { duration: 750, easing: 'easeInOutQuart' },
+    plugins: { 
+      legend: { display: false }, 
+      tooltip: {
+        backgroundColor: 'rgba(6,13,31,0.95)',
+        borderColor: 'rgba(0,229,255,0.4)',
+        borderWidth: 1,
+        titleColor: '#00e5ff',
+        bodyColor: '#fff',
+        titleFont: { family: 'Orbitron', size: 12, weight: '700' },
+        bodyFont: { family: 'JetBrains Mono', size: 10 },
+        padding: 12,
+        cornerRadius: 8,
+        displayColors: false
+      }
+    },
     scales: {
-      x: { grid: { color: 'rgba(0,229,255,0.05)' }, ticks: { color: '#4b5a72', font: { size: 9, family: 'JetBrains Mono' }, maxTicksLimit: 8 } },
-      y: { grid: { color: 'rgba(0,229,255,0.05)' }, ticks: { color: '#4b5a72', font: { size: 9, family: 'JetBrains Mono' } }, beginAtZero: false },
+      x: { 
+        grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false }, 
+        ticks: { color: 'var(--text-muted)', font: { size: 9, family: 'JetBrains Mono' }, maxTicksLimit: 8 } 
+      },
+      y: { 
+        grid: { color: 'rgba(255,255,255,0.03)', drawBorder: false }, 
+        ticks: { color: 'var(--text-muted)', font: { size: 9, family: 'JetBrains Mono' } }, 
+        beginAtZero: false 
+      },
     }
   };
 
   return (
-    <div className="card" style={{ gridArea: 'line' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-        <Activity size={16} color="var(--clr-cyan)" />
-        <span style={{ fontFamily: 'var(--font-heading)', fontSize: '0.75rem', letterSpacing: '0.08em' }}>SENSOR DATA — LAST 60s</span>
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.7rem', color: 'var(--clr-green)', fontFamily: 'var(--font-mono)' }}>
+    <div className="card card-glow" style={{ gridArea: 'line', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+        <div style={{ padding: 6, borderRadius: 8, background: 'rgba(0,229,255,0.1)' }}>
+          <Activity size={16} color="var(--clr-cyan)" />
+        </div>
+        <span style={{ fontFamily: 'var(--font-heading)', fontSize: '0.75rem', letterSpacing: '0.08em', fontWeight: 600 }}>REALTIME TELEMETRY</span>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.65rem', color: 'var(--clr-green)', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
           <div className="pulse-dot green" style={{ width: 6, height: 6 }} />
-          LIVE
+          LIVE STREAM
         </div>
       </div>
-      <div style={{ height: 150 }}>
+      <div style={{ flex: 1, minHeight: 140 }}>
         <Line data={chartData} options={options} />
       </div>
     </div>
@@ -212,39 +226,39 @@ function BarChartWidget({ data }) {
     datasets: [{
       label: 'kWh',
       data,
-      backgroundColor: 'rgba(0,229,255,0.25)',
-      borderColor: '#00e5ff',
+      backgroundColor: (context) => {
+        const ctx = context.chart.ctx;
+        const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+        gradient.addColorStop(0, 'rgba(0,229,255,0.4)');
+        gradient.addColorStop(1, 'rgba(0,112,243,0.05)');
+        return gradient;
+      },
+      borderColor: 'var(--clr-cyan)',
       borderWidth: 1,
-      borderRadius: 4,
-      hoverBackgroundColor: 'rgba(0,229,255,0.5)',
+      borderRadius: 6,
+      hoverBackgroundColor: 'var(--clr-cyan)',
     }]
   };
 
   const options = {
     responsive: true, maintainAspectRatio: false,
-    animation: { duration: 800 },
-    plugins: { legend: { display: false }, tooltip: {
-      backgroundColor: 'rgba(13,19,38,0.95)',
-      borderColor: 'rgba(0,229,255,0.3)',
-      borderWidth: 1,
-      titleColor: '#00e5ff',
-      bodyColor: '#94a3b8',
-      titleFont: { family: 'Orbitron', size: 10 },
-    }},
+    animation: { duration: 1000 },
+    plugins: { legend: { display: false } },
     scales: {
-      x: { grid: { color: 'rgba(0,229,255,0.04)' }, ticks: { color: '#4b5a72', font: { size: 9 } } },
-      y: { grid: { color: 'rgba(0,229,255,0.04)' }, ticks: { color: '#4b5a72', font: { size: 9 } }, beginAtZero: true },
+      x: { grid: { display: false }, ticks: { color: 'var(--text-muted)', font: { size: 9 } } },
+      y: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: 'var(--text-muted)', font: { size: 9 } }, beginAtZero: true },
     }
   };
 
   return (
     <div className="card" style={{ gridArea: 'bar' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-        <Zap size={16} color="var(--clr-yellow)" />
-        <span style={{ fontFamily: 'var(--font-heading)', fontSize: '0.75rem', letterSpacing: '0.08em' }}>ENERGY CONSUMPTION — 24H</span>
-        <span style={{ marginLeft: 'auto', color: 'var(--clr-yellow)', fontFamily: 'var(--font-mono)', fontSize: '0.7rem' }}>kWh</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+        <div style={{ padding: 6, borderRadius: 8, background: 'rgba(255,214,10,0.1)' }}>
+          <Zap size={16} color="var(--clr-yellow)" />
+        </div>
+        <span style={{ fontFamily: 'var(--font-heading)', fontSize: '0.75rem', letterSpacing: '0.08em', fontWeight: 600 }}>POWER USAGE</span>
       </div>
-      <div style={{ height: 150 }}>
+      <div style={{ height: 140 }}>
         <Bar data={chartData} options={options} />
       </div>
     </div>
@@ -254,13 +268,14 @@ function BarChartWidget({ data }) {
 /* ---- Device Status Widget ---- */
 function SignalBars({ strength }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 14 }}>
-      {[3, 5, 8, 11, 14].map((h, i) => (
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 16 }}>
+      {[3, 6, 9, 12, 15].map((h, i) => (
         <div key={i} style={{
           width: 3, height: h,
           borderRadius: 1,
-          background: i < strength ? 'var(--clr-cyan)' : 'var(--bg-elevated)',
-          transition: 'background 0.3s'
+          background: i < strength ? (strength > 3 ? 'var(--clr-green)' : 'var(--clr-yellow)') : 'rgba(255,255,255,0.05)',
+          boxShadow: i < strength ? `0 0 8px ${strength > 3 ? 'var(--clr-green)' : 'var(--clr-yellow)'}40` : 'none',
+          transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
         }} />
       ))}
     </div>
@@ -270,61 +285,86 @@ function SignalBars({ strength }) {
 function DeviceStatusWidget({ statuses, onDeviceClick }) {
   const deviceList = Object.keys(statuses || {}).map(id => ({ id, ...statuses[id] }));
   return (
-    <div className="card" style={{ gridArea: 'devices' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-        <Cpu size={16} color="var(--clr-cyan)" />
-        <span style={{ fontFamily: 'var(--font-heading)', fontSize: '0.75rem', letterSpacing: '0.08em' }}>DEVICE STATUS</span>
-        <span style={{ marginLeft: 'auto', fontSize: '0.72rem', color: 'var(--clr-green)', fontFamily: 'var(--font-mono)' }}>
-          {deviceList.filter(s => s.online).length}/{deviceList.length} Online
+    <div className="card" style={{ gridArea: 'devices', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+        <div style={{ padding: 6, borderRadius: 8, background: 'rgba(0,229,255,0.1)' }}>
+          <Cpu size={16} color="var(--clr-cyan)" />
+        </div>
+        <span style={{ fontFamily: 'var(--font-heading)', fontSize: '0.75rem', letterSpacing: '0.08em', fontWeight: 600 }}>CONNECTED NODES</span>
+        <span style={{ marginLeft: 'auto', fontSize: '0.65rem', color: 'var(--text-secondary)', background: 'var(--bg-elevated)', padding: '2px 8px', borderRadius: 4, fontFamily: 'var(--font-mono)' }}>
+          {deviceList.filter(s => s.online).length}/{deviceList.length}
         </span>
       </div>
-      <ul style={{ listStyle: 'none' }}>
+      <div style={{ flex: 1, overflowY: 'auto', maxHeight: 200, paddingRight: 4 }}>
         {deviceList.length === 0 ? (
-          <div style={{ padding: '20px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>No devices registered</div>
+          <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>No nodes registered</div>
         ) : deviceList.map((dev, i) => (
-          <li key={dev.name}
+          <div key={dev.id}
             onClick={() => onDeviceClick(dev, dev)}
             style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '9px 0', borderBottom: i < deviceList.length - 1 ? '1px solid var(--border-subtle)' : 'none',
-              cursor: 'pointer', transition: 'all 0.15s',
-              borderRadius: 'var(--radius-sm)'
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '12px', borderBottom: i < deviceList.length - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none',
+              cursor: 'pointer', transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              borderRadius: 'var(--radius-md)',
+              marginBottom: 4
             }}
-            onMouseOver={e => e.currentTarget.style.background = 'var(--bg-surface-2)'}
+            onMouseOver={e => e.currentTarget.style.background = 'var(--bg-elevated)'}
             onMouseOut={e => e.currentTarget.style.background = 'transparent'}
           >
-            <div className={`pulse-dot ${dev.online ? 'green' : 'red'}`} />
+            <div className={`pulse-dot ${dev.online ? 'green' : 'red'}`} style={{ width: 8, height: 8 }} />
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{dev.name}</div>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>ping: {dev.online ? rand(10,40) : '--'}ms</div>
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.82rem', fontWeight: 700, color: dev.online ? '#fff' : 'var(--text-muted)' }}>{dev.name}</div>
+              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'flex', gap: 6, marginTop: 2 }}>
+                <span>{dev.type}</span>
+                <span>•</span>
+                <span>{dev.online ? 'active' : 'offline'}</span>
+              </div>
             </div>
             <SignalBars strength={dev.online ? (dev.data?.sig || 4) : 0} />
-          </li>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }
 
 const CONTROLS = [
-  { label: 'Relay 1', icon: '⚡' },
-  { label: 'Relay 2', icon: '⚡' },
-  { label: 'Relay 3', icon: '⚡' },
-  { label: 'Relay 4', icon: '⚡' },
+  { label: 'Primary Relay', icon: '⚡' },
+  { label: 'Secondary Node', icon: '🔋' },
+  { label: 'External Light', icon: '💡' },
+  { label: 'Cooling System', icon: '❄️' },
 ];
 
 function ToggleControlsWidget({ toggles, setToggles }) {
   return (
-    <div className="card" style={{ gridArea: 'toggles' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-        <ToggleRight size={16} color="var(--clr-cyan)" />
-        <span style={{ fontFamily: 'var(--font-heading)', fontSize: '0.75rem', letterSpacing: '0.08em' }}>RELAY CONTROLS</span>
+    <div className="card" style={{ gridArea: 'toggles', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+        <div style={{ padding: 6, borderRadius: 8, background: 'rgba(0,229,255,0.1)' }}>
+          <ToggleRight size={16} color="var(--clr-cyan)" />
+        </div>
+        <span style={{ fontFamily: 'var(--font-heading)', fontSize: '0.75rem', letterSpacing: '0.08em', fontWeight: 600 }}>QUICK CONTROLS</span>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div style={{ display: 'grid', gap: 18, gridTemplateColumns: '1fr', flex: 1 }}>
         {CONTROLS.map((ctrl, i) => (
-          <div key={ctrl.label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: '1.1rem' }}>{ctrl.icon}</span>
-            <span style={{ flex: 1, fontSize: '0.88rem', color: toggles[i] ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{ctrl.label}</span>
+          <div key={ctrl.label} style={{ 
+            display: 'flex', alignItems: 'center', gap: 14, 
+            padding: '12px', background: 'rgba(255,255,255,0.02)', 
+            borderRadius: 'var(--r-md)', 
+            border: '1px solid rgba(255,255,255,0.04)',
+            transition: 'all 0.3s ease'
+          }}>
+            <div style={{ 
+              width: 36, height: 36, borderRadius: 8, 
+              background: toggles[i] ? 'rgba(0,229,255,0.1)' : 'rgba(255,255,255,0.03)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '1.2rem', transition: 'all 0.3s ease'
+            }}>
+              {ctrl.icon}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 600, color: toggles[i] ? '#fff' : 'var(--text-secondary)' }}>{ctrl.label}</div>
+              <div style={{ fontSize: '0.62rem', color: toggles[i] ? 'var(--clr-cyan)' : 'var(--text-muted)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>{toggles[i] ? 'ENABLED' : 'DISABLED'}</div>
+            </div>
             <div className="toggle-wrap">
               <div className={`toggle ${toggles[i] ? 'on' : ''}`} onClick={() => setToggles(i, !toggles[i])} />
             </div>
@@ -520,15 +560,28 @@ export default function DashboardPage() {
     socket.on('connect', () => {
       setConnected(true);
       socket.emit('get_initial_state', (state) => {
-        if (state.devices) setDeviceStatuses(state.devices);
+        if (state.devices) {
+          setDeviceStatuses(state.devices);
+          
+          // Find the first online device to populate initial dashboard data
+          const firstDevice = Object.values(state.devices).find(d => d.online);
+          if (firstDevice) {
+            if (firstDevice.data?.temp !== undefined) setTemp(firstDevice.data.temp);
+            if (firstDevice.data?.humidity !== undefined) setHumidity(firstDevice.data.humidity);
+            if (firstDevice.history && firstDevice.history.length > 0) {
+              setLineData(firstDevice.history.map(h => h.temp));
+              setLineLabels(firstDevice.history.map(h => h.time));
+            }
+          }
+        }
         if (state.toggles) setToggles(state.toggles);
       });
-      setLogs(prev => [...prev.slice(-19), { time: now(), msg: 'Connected to IoT Master Server' }]);
+      setLogs(prev => [...prev.slice(-19), { time: now(), msg: 'Secure connection established with Master Server' }]);
     });
 
     socket.on('disconnect', () => {
       setConnected(false);
-      setLogs(prev => [...prev.slice(-19), { time: now(), msg: 'Disconnected from IoT server' }]);
+      setLogs(prev => [...prev.slice(-19), { time: now(), msg: 'System offline: Connection lost' }]);
     });
 
     socket.on('device_status_update', (devices) => {
@@ -542,10 +595,8 @@ export default function DashboardPage() {
         if (data.payload.humidity !== undefined) setHumidity(data.payload.humidity);
         
         // Add to graph
-        if (data.payload.temp !== undefined) {
-          setLineData(prev => [...prev.slice(1), data.payload.temp]);
-          setLineLabels(prev => [...prev.slice(1), now()]);
-        }
+        setLineData(prev => [...prev.slice(1), data.payload.temp || 0]);
+        setLineLabels(prev => [...prev.slice(1), now()]);
       }
     });
 
@@ -563,11 +614,9 @@ export default function DashboardPage() {
   }, [socketUrl]);
 
   const handleToggle = (index, value) => {
-    // Optimistic update
-    const n = [...toggles];
-    n[index] = value;
-    setToggles(n);
-    if (socketInstance) socketInstance.emit('set_toggle', index, value);
+    if (socketInstance) {
+      socketInstance.emit('set_toggle', index, value);
+    }
   };
 
   return (
